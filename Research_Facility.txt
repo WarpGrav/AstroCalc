@@ -1,0 +1,17 @@
+--- PRODUCTION QUEUE ---
+1 Worklight
+6 Small Generator
+6 Tapper
+3 Auto Arm
+3 Medium Platform A
+3 Medium Storage
+1 Large Extended Platform
+1 Large Platform B
+1 Research Chamber
+
+--- REQUIRED MATERIALS ---
+9 Aluminum
+7 Compound
+1 Copper
+3 Graphite
+16 Resin

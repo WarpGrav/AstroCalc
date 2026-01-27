@@ -1,0 +1,1140 @@
+<!-- ©2026 WarpGrav. DO NOT PACKAGE and/or SELL. FREE for Personal use. -->
+
+<!--
+End User License Agreement (EULA) for AstroneerCalc
+Last Updated: January 20, 2026
+This End User License Agreement ("Agreement") is a legal agreement between you ("User") and the creators of AstroneerCalc ("WarpGrav"). By using or sharing this web application, you agree to be bound by the terms of this Agreement.
+1. License Grant
+The Developer grants you a personal, non-exclusive, non-transferable, and free license to use the AstroneerCalc web application for personal, non-commercial purposes.
+2. Permissions & Sharing
+Free to Use: You may use the tool at no cost.
+Free to Share: You are encouraged to share the link to the official web application with other players.
+3. Prohibited Actions (The "Legal-Like" Section)
+Any violation of the following will result in the immediate termination of your license and may subject you to legal action:
+No Commercial Sale: You may not sell, rent, lease, or charge any fee for access to AstroneerCalc or its outputs.
+No Redistribution/Bundling: You may not distribute AstroneerCalc as part of a software package, "mod pack," or commercial toolkit without express written consent from the Developer.
+No Reverse Engineering: You may not attempt to decompile, disassemble, or derive the source code for commercial gain or to create a competing paid product.
+4. Ownership
+The Developer retains all rights, titles, and interests in and to AstroneerCalc, including all intellectual property rights therein. This software is provided "as-is."
+5. Disclaimer of Affiliation
+AstroneerCalc is a fan-made tool and is not affiliated with, endorsed by, or sponsored by System Era Softworks. All Astroneer assets, names, and logos are the property of their respective owners.
+6. Limitation of Liability
+In no event shall the Developer be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use AstroneerCalc.
+7. Termination
+The Developer reserves the right to terminate this license at any time if you fail to comply with any term of this Agreement. Upon termination, you must cease all use of the application.
+-->
+
+<!-- 
+WarpGrav: 1/20/2026
+This is a quick and easy one page solution for calculating resources required to build structure
+and equipment load-outs in ASTRONEER. Simply select the items you need from the appropriate printer column, and
+select ADD to list. Increase the quantity of items in the list. Download the materials list, or just
+keep the page open in your browser. 
+Persistance Note: I am using the IndexedDB API, so in a 'regular' browser window/tab (not Incognito/InPrivate) your
+data will survive tab/browser closure, restarts, even session purge. It will not survive scheduled or manual Cookie purges.
+-->
+<!--
+WarpGrav: 1/26/2026
+Added filtering for the dropdowns. So if you only need platforms type "platform" dropdowns will only display items containing the same.
+Added Import/Export .CSV files
+Replaced default browser modals with custom modals.
+-->
+<!--
+WarpGrav: 1/27/2026
+- Added validation to CSV Import (checks ID validity and quantity).
+- Added 'Clear' button to search input.
+- Implemented custom visual tooltips.
+- Added comments to JS functions.
+- Updated text for Download button and Materials header.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astroneer Master Planner</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1d;
+            --panel-bg: #2d2d30;
+            --accent-blue: #00d2ff;
+            --accent-orange: #ff9100;
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --border: #444;
+            --danger: #ff4757;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1100px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        /* --- Input Section (4 Columns) --- */
+        .tier-selector-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .tier-group {
+            background: var(--panel-bg);
+            padding: 15px;
+            border-radius: 8px;
+            border-top: 3px solid var(--accent-blue);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tier-group h3 {
+            margin: 0 0 10px 0;
+            font-size: 0.95rem;
+            color: var(--accent-orange);
+            text-align: center;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 5px;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            background: #1e1e20;
+            color: white;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        button.add-btn {
+            background: var(--accent-blue);
+            color: #000;
+            font-weight: bold;
+            border: none;
+            border-radius: 4px;
+            padding: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: opacity 0.2s;
+        }
+        button.add-btn:hover { opacity: 0.9; }
+
+        /* --- Search Bar --- */
+        .search-container {
+            display: flex;
+            justify-content: center;
+            max-width: 500px;
+            margin: 0 auto 20px auto;
+            gap: 8px;
+        }
+
+        .search-bar {
+            flex: 1;
+            padding: 10px;
+            background: #1e1e20;
+            color: white;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        .search-bar:focus { outline: none; border-color: var(--accent-blue); }
+
+        .clear-search-btn {
+            background: #333;
+            color: #ccc;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 0 15px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .clear-search-btn:hover { background: #444; color: white; }
+
+        /* --- Main Content Grid --- */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-grid { grid-template-columns: 1fr; }
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .panel h2 {
+            margin-top: 0;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+            font-size: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* --- Build Queue List --- */
+        .queue-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .queue-item {
+            display: grid;
+            grid-template-columns: 2fr 2fr 1.5fr 0.5fr;
+            align-items: center;
+            background: #363639;
+            margin-bottom: 8px;
+            padding: 10px;
+            border-radius: 6px;
+            gap: 10px;
+        }
+
+        .item-name { font-weight: bold; }
+        
+        .item-cost { 
+            font-size: 0.85rem; 
+            color: var(--text-muted); 
+            line-height: 1.4;
+        }
+
+        .qty-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            background: #222;
+            border-radius: 4px;
+            padding: 2px;
+        }
+
+        .qty-btn {
+            background: #444;
+            color: white;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .qty-btn:hover { background: #555; }
+
+        .qty-display {
+            width: 30px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .remove-btn {
+            background: transparent;
+            color: var(--danger);
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+        .remove-btn:hover { color: #ff6b81; }
+
+        /* --- Materials List --- */
+        .materials-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .mat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #3d3d40;
+        }
+        .mat-item:last-child { border-bottom: none; }
+
+        .mat-name { color: var(--text-muted); }
+        .mat-val { color: var(--accent-orange); font-weight: bold; font-size: 1.1rem; }
+
+        
+        /* --- Header Controls --- */
+        .header-controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        .header-btn {
+            background: #333;
+            color: #ccc;
+            border: 1px solid #444;
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: background 0.2s;
+        }
+        .header-btn:hover {
+            background: #444;
+            color: white;
+        }
+
+        #reset-all {
+            color: var(--danger);
+            border-color: #622;
+        }
+        #reset-all:hover {
+            background: #311;
+        }
+        
+        #download-btn {
+        background: var(--accent-blue);
+        color: #1a1a1d;
+        border: none;
+        padding: 5px 12px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        cursor: pointer;
+        border-radius: 4px;
+        margin-left: 10px;
+        float: right; /* Ensures it sits to the right if flex fails */
+        }
+
+        #download-btn:hover {
+            background: #00b8e6;
+        }
+
+        /* --- Custom Modal --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); z-index: 1000;
+            display: none; justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: var(--panel-bg); padding: 20px; border-radius: 8px;
+            border: 1px solid var(--accent-blue); max-width: 400px; width: 90%;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        .modal-content h3 { margin-top: 0; color: var(--accent-blue); border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .modal-btn { padding: 8px 16px; border-radius: 4px; cursor: pointer; border: none; font-weight: bold; }
+        .modal-btn-primary { background: var(--accent-blue); color: #1a1a1d; }
+        .modal-btn-secondary { background: #444; color: #ccc; }
+        .modal-btn-secondary:hover { background: #555; color: white; }
+
+        .modal-input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 10px;
+            background: #222;
+            color: white;
+            border: 1px solid #555;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .modal-input:focus { outline: none; border-color: var(--accent-blue); }
+
+        /* --- Custom Tooltip --- */
+        .custom-tooltip {
+            position: fixed;
+            background: #222;
+            color: #eee;
+            padding: 8px 12px;
+            border: 1px solid var(--accent-blue);
+            border-radius: 4px;
+            font-size: 0.85rem;
+            pointer-events: none;
+            z-index: 9999;
+            display: none;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <h1>Astroneer Planner</h1>
+    </header>
+
+    <div class="search-container">
+        <input type="text" id="search-input" class="search-bar" placeholder="Filter: Try using (battery)..." oninput="populateDropdowns(this.value)">
+        <button class="clear-search-btn" onclick="clearSearch()" data-tooltip="Clear search filter and reset dropdowns">Clear</button>
+    </div>
+
+    <div class="tier-selector-container">
+        
+        <div class="tier-group">
+            <h3>Tier 1: Backpack</h3>
+            <select id="sel-tier1"><option value="">Select Item...</option></select>
+            <button class="add-btn" onclick="addItemFromSelect('sel-tier1')">Add Small</button>
+        </div>
+
+        <div class="tier-group">
+            <h3>Tier 2: Small Printer</h3>
+            <select id="sel-tier2"><option value="">Select Item...</option></select>
+            <button class="add-btn" onclick="addItemFromSelect('sel-tier2')">Add Medium</button>
+        </div>
+
+        <div class="tier-group">
+            <h3>Tier 3: Med Printer</h3>
+            <select id="sel-tier3"><option value="">Select Item...</option></select>
+            <button class="add-btn" onclick="addItemFromSelect('sel-tier3')">Add Large</button>
+        </div>
+
+        <div class="tier-group">
+            <h3>Tier 4: Large Printer</h3>
+            <select id="sel-tier4"><option value="">Select Item...</option></select>
+            <button class="add-btn" onclick="addItemFromSelect('sel-tier4')">Add XL</button>
+        </div>
+
+    </div>
+
+    <div class="main-grid">
+        <div class="panel">
+            <h2>
+                Production Queue
+                <div class="header-controls">
+                    <input type="file" id="csv-input" style="display: none;" accept=".csv" onchange="importCSV(this)">
+                    <button class="header-btn" onclick="document.getElementById('csv-input').click()" data-tooltip="Import a queue from a CSV file. Only imports exported format.">Import CSV</button>
+                    <button class="header-btn" onclick="exportCSV()" data-tooltip="Export current queue to a CSV file you can open in Excel or Sheets.">Export CSV</button>
+                    <button id="reset-all" class="header-btn" onclick="resetDB()" data-tooltip="Removes all items from the queue. May be recovered by Import if previously Exported.">Clear All</button>
+                </div>
+            </h2>
+            <ul id="queue-container" class="queue-list">
+                </ul>
+        </div>
+
+        <div class="panel">
+            <h2>Total Materials
+               <button id="download-btn" onclick="downloadList()" data-tooltip="Download the materials list as a text file that includes Production Queue and Materials list.">Download txt</button> 
+            </h2>
+            <ul id="materials-container" class="materials-list">
+                </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Modal Structure -->
+<div id="custom-modal" class="modal-overlay">
+    <div class="modal-content">
+        <h3 id="modal-title">Title</h3>
+        <p id="modal-message" style="white-space: pre-line;">Message</p>
+        <input type="text" id="modal-input" class="modal-input" style="display: none;">
+        <div class="modal-actions">
+            <button id="modal-cancel" class="modal-btn modal-btn-secondary">Cancel</button>
+            <button id="modal-ok" class="modal-btn modal-btn-primary">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- Tooltip Element -->
+<div id="tooltip-display" class="custom-tooltip"></div>
+
+<script>
+    /* =========================================
+       1. DATA SOURCE (Comprehensive List)
+       ========================================= */
+    const GAME_DATA = {
+        tier1: [ // Backpack Printed (Small Objects)
+            { id: "t1_tether", name: "Tether Bundle", mats: { "Compound": 1 } }, //x
+            { id: "t1_canister", name: "Small Canister", mats: { "Resin": 1 } }, //x
+            { id: "t1_oxyfilter", name: "Oxygen Filters", mats: { "Resin": 1 } }, //x
+            { id: "t1_small_print_filter", name: "Small Print Filter", mats: { "Resin": 1 } }, //x
+            { id: "t1_small_horn", name: "Small Trumpet Horn", mats: { "Resin": 1 } }, //x
+            { id: "t1_light", name: "Worklight", mats: { "Copper": 1 } }, //x
+            { id: "t1_flood", name: "Floodlight", mats: { "Tungsten": 1 } }, //x
+            { id: "t1_small_gen", name: "Small Generator", mats: { "Compound": 1 } }, //x
+            { id: "t1_small_solar", name: "Small Solar", mats: { "Copper": 1 } }, //x
+            { id: "t1_small_wind", name: "Small Wind Turbine", mats: { "Ceramic": 1 } }, //x
+            { id: "t1_level_block", name: "Leveling Block", mats: { "Soil": 1 } }, //x
+            { id: "t1_extenders", name: "Extenders", mats: { "Copper": 1 } }, //x
+            { id: "t1_packager", name: "Packager", mats: { "Graphite": 1 } }, //x
+            { id: "t1_dynamite", name: "Dynamite", mats: { "Explosive Powder": 1 } }, //x
+            { id: "t1_firework", name: "Fireworks", mats: { "Explosive Powder": 1 } }, //x
+            { id: "t1_beacon", name: "Beacon", mats: { "Quartz": 1 } }, //x
+            { id: "t1_power_cell", name: "Power Cells", mats: { "Graphite": 1 } }, //x
+            { id: "t1_oxy_tank", name: "Oxygen Tank", mats: { "Glass": 1 } }, //x
+            { id: "t1_tapper", name: "Tapper", mats: { "Aluminum": 1 } }, //x
+            { id: "t1_solid_jet", name: "Solid-Fuel Jump Jet", mats: { "Aluminum": 1 } }, //x
+            { id: "t1_small_batt", name: "Small Battery", mats: { "Zinc": 1 } }, //x
+            { id: "t1_port_oxy", name: "Portable Oxygenator", mats: { "Nanocarbon Alloy": 1 } }, //x
+            { id: "t1_jet_Pack", name: "Hydrazine Jet Pack", mats: { "Titanium Alloy": 1 } }, //x
+            { id: "t1_glowsticks", name: "Glowsticks", mats: { "Organic": 1 } }, //x
+            { id: "t1_drill1", name: "Drill Mod 1", mats: { "Ceramic": 1 } }, //x
+            { id: "t1_drill2", name: "Drill Mod 2", mats: { "Tungsten Carbide": 1 } }, //x
+            { id: "t1_drill3", name: "Drill Mod 3", mats: { "Diamond": 1 } }, //x
+            { id: "t1_boost", name: "Boost Mod", mats: { "Zinc": 1 } }, //x
+            { id: "t1_wide", name: "Wide Mod", mats: { "Zinc": 1 } }, //x
+            { id: "t1_narrow", name: "Narrow Mod", mats: { "Zinc": 1 } }, //x
+            { id: "t1_inhibitor", name: "Inhibitor Mod", mats: { "Zinc": 1 } }, //x
+            { id: "t1_align", name: "Alignment Mod", mats: { "Zinc": 1 } }, //x
+            { id: "t1_terrain", name: "Terrain Analyzer", mats: { "Zinc": 1 } }, //x
+            { id: "t1_small_cam", name: "Small Camera", mats: { "Steel": 1 } }, //x
+            { id: "t1_probe", name: "Probe Scanner", mats: { "Steel": 1 } }, //x
+            { id: "t1_hoverboard", name: "Hoverboard", mats: { "EXO Chip": 1 } }, //x
+            { id: "t1_camera", name: "Small Camera", mats: { "EXO Chip": 1 } }, //x
+            { id: "t1_holo", name: "Holographic Figurine", mats: { "Plastic": 1 } }, //x
+        ],
+        tier2: [ // Small Printer (Medium Objects)
+            { id: "t2_med_stor", name: "Medium Storage", mats: { "Resin": 2 } }, //x
+            { id: "t2_med_print", name: "Medium Printer", mats: { "Compound": 2 } }, //x
+            { id: "t2_med_plat_a", name: "Medium Platform A", mats: { "Resin": 1 } }, //x
+            { id: "t2_med_plat_b", name: "Medium Platform B", mats: { "Resin": 2 } }, //x
+            { id: "t2_med_plat_c", name: "Medium Platform C", mats: { "Resin": 1 } }, // Wait, C is usually larger? No, Med Plat C exists.
+            { id: "t2_tall_plat", name: "Tall Platform", mats: { "Copper": 1 } },
+            { id: "t2_med_solar", name: "Medium Solar", mats: { "Copper": 1, "Glass": 1 } }, //x
+            { id: "t2_med_wind", name: "Medium Wind", mats: { "Aluminum": 1, "Ceramic": 1 } }, //x
+            { id: "t2_med_gen", name: "Medium Generator", mats: { "Tungsten": 1, "Aluminum": 1 } }, //x
+            { id: "t2_med_batt", name: "Medium Battery", mats: { "Zinc": 1, "Lithium": 1 } }, //x
+            { id: "t2_rtg", name: "RTG", mats: { "Nanocarbon Alloy": 1, "Lithium": 1 } }, // Fits in medium slot //x
+            { id: "t2_seat", name: "Rover Seat", mats: { "Compound": 2 } }, //x
+            { id: "t2_tractor", name: "Tractor", mats: { "Aluminum": 2 } }, //x
+            { id: "t2_trailer", name: "Trailer", mats: { "Aluminum": 1, "Compound": 1 } }, //x
+            { id: "t2_winch", name: "Winch", mats: { "Rubber": 1, "Tungsten": 1 } }, //x
+            { id: "t2_drill_head_1", name: "Drill Strength 1 (Rover)", mats: { "Ceramic": 1, "Tungsten Carbide": 1 } }, //x
+            { id: "t2_drill_head_2", name: "Drill Strength 2 (Rover)", mats: { "Titanium Alloy": 1, "Tungsten Carbide": 1 } }, //x
+            { id: "t2_drill_head_3", name: "Drill Strength 3 (Rover)", mats: { "Diamond": 1, "Titanium Alloy": 1 } }, //x
+            { id: "t2_solid_thrust", name: "Solid-Fuel Thruster", mats: { "Aluminum": 1, "Ammonium": 1 } }, //x
+            { id: "t2_hydro_thrust", name: "Hydrazine Thruster", mats: { "Tungsten": 1, "Steel": 1 } }, //x
+            { id: "t2_med_shred", name: "Medium Shredder", mats: { "Iron": 2 } }, //x
+            { id: "t2_splitter", name: "Splitter", mats: { "Copper": 1, "Graphite": 1 } }, //x
+            { id: "t2_sensor_stor", name: "Storage Sensor", mats: { "Zinc": 1 } }, //x
+            { id: "t2_sensor_batt", name: "Battery Sensor", mats: { "Zinc": 1 } }, //x
+            { id: "t2_button_repeat", name: "Button Repeater", mats: { "Zinc": 1 } }, //x
+            { id: "t2_prox_repeat", name: "Proximity Repeater", mats: { "Zinc": 1 } }, //x
+            { id: "t2_delay_repeat", name: "Delay Repeater", mats: { "Zinc": 1 } }, //x
+            { id: "t2_count_repeat", name: "Count Repeater", mats: { "Zinc": 1 } }, //x
+            { id: "t2_sensor_pow", name: "Power Sensor", mats: { "Zinc": 1, "Copper": 1 } }, //x
+            { id: "t2_power_ext", name: "Power Extenders", mats: { "Copper": 1 } }, //x
+            { id: "t2_power_sw", name: "Power Switch", mats: { "Copper": 1 } }, //x
+            { id: "t2_auto_arm", name: "Auto Arm", mats: { "Aluminum": 1, "Graphite": 1 } }, //x
+            { id: "t2_med_res_can", name: "Medium Resource Canister", mats: { "Plastic": 1, "Glass": 1 } }, //x
+            { id: "t2_med_soil_can", name: "Medium Fuel & Soil Canister", mats: { "Plastic": 1, "Glass": 1 } }, //x
+            { id: "t2_med_gas_can", name: "Medium Gas Canister", mats: { "Silicone": 1, "Glass": 1 } }, //x
+            { id: "t2_oxygen", name: "Oxygenator", mats: { "Aluminum": 1, "Ceramic": 1 } }, //x
+            { id: "t2_shelter", name: "Field Shelter", mats: { "Silicone": 1, "Graphene": 1 } }, //x
+            { id: "t2_paver", name: "Paver", mats: { "Aluminum Alloy": 1, "Silicone": 1 } }, //x
+            { id: "t2_med_filter", name: "Medium Print Filter", mats: { "Resin": 2 } }, //x
+            { id: "t2_paver", name: "Paver", mats: { "Aluminum Alloy": 1, "Silicone": 1 } }, //x
+            { id: "t2_rail_bundle", name: "Rail Post Bundle", mats: { "Aluminum": 1, "Resin": 1 } }, //x
+            { id: "t2_rail_bundle_tall", name: "Tall Rail Post Bundle", mats: { "Aluminum": 1, "Resin": 1 } }, //x
+            { id: "t2_rail_bundle_junction", name: "Rail Junction Bundle", mats: { "Aluminum": 2 } }, //x
+            { id: "t2_walk_bundle", name: "Walkway Bundle", mats: { "Aluminum": 1, "Resin": 1 } }, //x
+            { id: "t2_fault_find", name: "Fault Finder", mats: { "Astronium": 1, "Scrap": 1 } }, //x
+            { id: "t2_ruby", name: "Ruby", mats: { "resin": 1, "Quartz": 1 } }, //x
+            { id: "t2_icon_sign", name: "Icon Sign", mats: { "resin": 1, "glass": 1 } }, //x
+            { id: "t2_bonsai", name: "Robo Bonsai", mats: { "Compound": 1, "Plastic": 1 } }, //x
+            { id: "t2_snow_globe", name: "Snow Globe", mats: { "Plastic": 1, "glass": 1 } }, //x
+            { id: "t2_ship_ina", name: "Ship in a Bottle", mats: { "Plastic": 1, "glass": 1 } }, //x
+            { id: "t2_model_planet", name: "Model Planet", mats: { "Plastic": 1, "Resin": 1 } }, //x
+            { id: "t2_lava_lamp", name: "Lava Lamp", mats: { "Plastic": 1, "Glass": 1 } }, //x
+            { id: "t2_lava_lamp_bucket", name: "Lava Lamp Helmet", mats: { "Plastic": 1, "Glass": 1 } }, //x
+            { id: "t2_aqua", name: "Simulated Aquarium", mats: { "Aluminum Alloy": 1, "Glass": 1 } }, //x
+            { id: "t2_demega", name: "Mega-Deconstructor", mats: { "Nanocarbon Alloy": 1, "Graphene": 1 } }, //x
+            { id: "t2_tether_drop", name: "Tether Dropper", mats: { "Compound": 1, "Tungsten Carbide": 1 } }, //x
+            { id: "t2_ding", name: "Melodic Mushroom", mats: { "Resin": 1, "Iron": 1 } }, //x
+        ],
+        tier3: [ // Medium Printer (Large Objects)
+            { id: "t3_lg_print", name: "Large Printer", mats: { "Compound": 3 } }, //x
+            { id: "t3_res_chamb", name: "Research Chamber", mats: { "Resin": 2, "Compound": 1 } }, //x
+            { id: "t3_smelter", name: "Smelting Furnace", mats: { "Resin": 2, "Compound": 1 } }, //x
+            { id: "t3_centrifuge", name: "Soil Centrifuge", mats: { "Compound": 2, "Aluminum": 1 } }, //x
+            { id: "t3_chem_lab", name: "Chemistry Lab", mats: { "Ceramic": 1, "Glass": 1, "Tungsten": 1 } }, //x
+            { id: "t3_atmos", name: "Atmospheric Condenser", mats: { "Plastic": 1, "Glass": 1, "Iron": 1 } }, //x
+            { id: "t3_lg_print_filter", name: "Large Print Filter", mats: { "resin": 3 } }, //x
+            { id: "t3_trade", name: "Trade Platform", mats: { "Iron": 1, "Tungsten": 1, "Compound": 1 } }, //x
+            { id: "t3_exo_plat", name: "EXO Request Platform", mats: { "Resin": 2, "Compound": 1 } }, //x
+            { id: "t3_lg_solar", name: "Large Solar Panel", mats: { "Aluminum Alloy": 1, "Glass": 1, "Copper": 1 } }, //x
+            { id: "t3_lg_wind", name: "Large Wind Turbine", mats: { "Aluminum Alloy": 1, "Glass": 1, "Ceramic": 1 } }, //x
+            { id: "t3_lg_battery", name: "Large Battery", mats: { "Lithium": 1, "Zink": 1 } }, //x
+            { id: "t3_lg_stor", name: "Large Storage", mats: { "Ceramic": 3 } }, //x
+            { id: "t3_lg_stor_silo_a", name: "Large Storage Silo A", mats: { "Aluminum Alloy": 2 } }, //x
+            { id: "t3_lg_stor_silo_b", name: "Large Storage Silo B", mats: { "Steel": 3 } }, //x
+            { id: "t3_lg_stor_act", name: "Large Active Storage", mats: { "Aluminum": 1, "Resin": 1, "Zinc": 1 } }, //x
+            { id: "t3_lg_plat_a", name: "Large Platform A", mats: { "Resin": 2 } }, //x
+            { id: "t3_lg_plat_b", name: "Large Platform B", mats: { "Resin": 3 } }, //x
+            { id: "t3_lg_plat_c", name: "Large Platform C", mats: { "Resin": 1, "Iron": 1, "Ceramic": 1 } }, //x
+            { id: "t3_lg_t_plat", name: "Large T-Platform", mats: { "Aluminum": 1, "Resin": 2 } }, //x
+            { id: "t3_lg_curv_plat", name: "Large Curved Platform", mats: { "Ceramic": 1, "Resin": 2 } }, //x
+            { id: "t3_lg_ext_plat", name: "Large Extended Platform", mats: { "Resin": 2 } }, //x
+            { id: "t3_lg_stack_plat", name: "Large Stacked Platform", mats: { "Resin": 3 } }, //x
+            { id: "t3_buggy", name: "Buggy", mats: { "Compound": 1, "Aluminum": 1 } }, //x            
+            { id: "t3_med_rover", name: "Medium Rover", mats: { "Plastic": 2, "Rubber": 1 } }, //x
+            { id: "t3_lg_rover_seat", name: "Large Rover Seat", mats: { "Plastic": 1, "Compound": 2 } }, //x
+            { id: "t3_lg_rover_seat_b", name: "Large Rover Seat B", mats: { "Plastic": 2, "Compound": 1 } }, //x
+            { id: "t3_crane", name: "Crane", mats: { "Steel": 1, "Silicone": 1, "Titanium": 1 } }, //x
+            { id: "t3_lg_shred", name: "Large Shredder", mats: { "Iron": 1, "Tungsten Carbide": 1, "EXO Chip": 1 } }, //x
+            { id: "t3_lg_res_can", name: "Large Resource Canister", mats: { "Glass": 1, "Titanium": 1, "Nanocarbon Alloy": 1 } }, //x
+            { id: "t3_lg_gas_can", name: "Large Gas Canister", mats: { "Silicone": 1, "Titanium Alloy": 1, "Glass": 1 } }, //x
+            { id: "t3_lg_soil_can", name: "Large Fluid & Soil Canister", mats: { "Plastic": 1, "Titanium Alloy": 1, "Glass": 1 } }, //x
+            { id: "t3_vtol", name: "VTOL", mats: { "EXO Chip": 1, "Tungsten Carbide": 1, "Silicone": 1 } }, //x
+            { id: "t3_rail_eng", name: "Rail Engine", mats: { "Resin": 1, "Aluminum": 1, "Copper": 1 } }, //x
+            { id: "t3_rail_car", name: "Rail Car", mats: { "Resin": 2, "Aluminum": 1 } }, //x
+        ],
+        tier4: [ // Large Printer (Extra Large Objects)
+            { id: "t4_sensor_mid_arch", name: "Medium Sensor Arch", mats: { "Zinc": 1, "Quartz": 1 } }, //x
+            { id: "t4_sensor_XL_arch", name: "XL Sensor Arch", mats: { "Zinc": 2, "Quartz": 2 } }, //x
+            { id: "t4_sensor_XL_canopy", name: "XL Sensor Canopy", mats: { "Zinc": 2, "Quartz": 2 } }, //x
+            { id: "t4_sensor_lg_ring", name: "Large Sensor Ring", mats: { "Zinc": 1, "Quartz": 1 } }, //x
+            { id: "t4_sensor_lg_hoop_a", name: "Large Sensor Hoop A", mats: { "Zinc": 1, "Quartz": 2 } }, //x
+            { id: "t4_sensor_lg_hoop_b", name: "Large Sensor Hoop B", mats: { "Zinc": 2, "Quartz": 1 } }, //x
+            { id: "t4_sensor_XL_hoop_a", name: "XL Sensor Hoop A", mats: { "Zinc": 2, "Quartz": 2 } }, //x
+            { id: "t4_sensor_XL_hoop_b", name: "XL Sensor Hoop B", mats: { "Zinc": 3, "Quartz": 1 } }, //x
+            { id: "t4_lg_rover", name: "Large Rover", mats: { "EXO Chip": 2, "Rubber": 1, "Aluminum Alloy": 1 } }, //x
+            { id: "t4_mega_shuttle", name: "Mega-Mini Training Shuttle", mats: { "Aluminum": 1, "Iron": 1 } }, //x
+            { id: "t4_lg_shuttle", name: "Large Shuttle", mats: { "EXO Chip": 2, "Titanium Alloy": 2, "Ceramic": 1 } }, //x
+            { id: "t4_med_shuttle", name: "Medium Shuttle", mats: { "Aluminum Alloy": 1, "Ceramic": 2 } }, //x 
+            { id: "t4_med_shuttle", name: "Small Shuttle", mats: { "Aluminum": 2, } }, //x
+            { id: "t4_shelter", name: "Shelter", mats: { "Plastic": 2, "Silicone": 2 } }, //x
+            { id: "t4_auto_ext", name: "Auto Extractor", mats: { "Steel": 1, "Tungsten Carbide": 1, "Rubber": 1, "EXO Chip": 1 } }, //x
+            { id: "t4_xl_wind", name: "XL Wind Turbine", mats: { "Iron": 1, "Ceramic": 1, "Graphene": 1, "Aluminum Alloy": 1 } }, //x
+            { id: "t4_solar_arr", name: "Solar Array", mats: { "Copper": 1, "Glass": 1, "Graphene": 1, "Aluminum Alloy": 1 } }, //x
+            { id: "t4_xl_plat_a", name: "XL Platform A", mats: { "Iron": 2, "Ceramic": 2 } }, //x
+            { id: "t4_xl_plat_b", name: "XL Platform B", mats: { "Iron": 3, "Steel": 1 } }, //x
+            { id: "t4_xl_plat_c", name: "XL Platform C", mats: { "Iron": 2, "Steel": 2 } }, //x
+            { id: "t4_xl_plat_curved", name: "XL Curved Platform", mats: { "Ceramic": 2, "Compound": 2 } }, //x
+            { id: "t4_xl_plat_ext", name: "XL Extended Platform", mats: { "Resin": 3 } }, //x
+            { id: "t4_xl_plat_fig", name: "Figurine Platform", mats: { "Iron": 4 } }, //x
+            { id: "t4_xl_shred", name: "XL Shredder", mats: { "Steel": 2, "Tungsten Carbide": 2 } }, //x
+            { id: "t4_xl_stor", name: "XL Storage", mats: { "Iron": 2, "Ceramic": 2 } }, //x
+            { id: "t4_xl_can", name: "XL Resource Canister", mats: { "Diamond": 1, "EXO Chip": 1, "Nanocarbon Alloy": 2 } }, //x
+            { id: "t4_landing", name: "Landing Pad", mats: { "Aluminum": 2, "Ceramic": 1 } }, //x
+            { id: "t4_exo_req", name: "EXO Request Platform", mats: { "Resin": 2, "Ceramic": 1 } },
+            { id: "t4_rail_station", name: "Rail Station", mats: { "Titanium": 2, "Quartz": 1, "Copper": 1 } }, //x
+        ]
+    };
+
+    /* =========================================
+       2. INDEXED DB WRAPPER
+       ========================================= */
+    const DB_NAME = "AstroneerPlannerDB";
+    const STORE_NAME = "cart_store";
+    let db;
+
+    // Initialize IndexedDB connection
+    async function initDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, 1);
+            
+            request.onerror = (e) => console.error("DB Error", e);
+            
+            request.onupgradeneeded = (e) => {
+                db = e.target.result;
+                if (!db.objectStoreNames.contains(STORE_NAME)) {
+                    db.createObjectStore(STORE_NAME, { keyPath: "id" });
+                }
+            };
+            
+            request.onsuccess = (e) => {
+                db = e.target.result;
+                resolve(db);
+            };
+        });
+    }
+
+    // Save or update an item in the store
+    async function saveItem(item) {
+        if(!db) await initDB();
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        tx.objectStore(STORE_NAME).put(item);
+        return new Promise(resolve => tx.oncomplete = resolve);
+    }
+
+    // Remove an item from the store by ID
+    async function deleteItem(id) {
+        if(!db) await initDB();
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        tx.objectStore(STORE_NAME).delete(id);
+        return new Promise(resolve => tx.oncomplete = resolve);
+    }
+
+    // Retrieve all items from the store
+    async function getAllItems() {
+        if(!db) await initDB();
+        return new Promise(resolve => {
+            const tx = db.transaction(STORE_NAME, "readonly");
+            const store = tx.objectStore(STORE_NAME);
+            const request = store.getAll();
+            request.onsuccess = () => resolve(request.result);
+        });
+    }
+
+    // Generate and download a text summary of the queue
+    async function downloadList() {
+        const items = await getAllItems();
+        
+        if (items.length === 0) {
+            await showModal("Empty List", "The list is empty. Add items before downloading.");
+            return;
+        }
+
+        // 1. Prompt for Filename
+        let filename = await showInputModal("Download List", "Enter a filename for your list:", "astroneer_plan");
+        if (!filename) return; // User cancelled
+        if (!filename.endsWith(".txt")) filename += ".txt";
+
+        // 2. Prepare Data & Calculate Totals
+        let fileContent = "--- PRODUCTION QUEUE ---\n";
+        const totalMats = {};
+
+        // Format Items: "Qty Name"
+        items.forEach(item => {
+            fileContent += `${item.qty} ${item.name}\n`;
+            
+            // Tally materials while looping
+            for(const [m, q] of Object.entries(item.mats)) {
+                if(!totalMats[m]) totalMats[m] = 0;
+                totalMats[m] += (q * item.qty);
+            }
+        });
+
+        // Add Spacer
+        fileContent += "\n--- REQUIRED MATERIALS ---\n";
+
+        // Format Materials: "Qty Name" (Sorted Alphabetically)
+        const sortedMats = Object.keys(totalMats).sort();
+        sortedMats.forEach(mat => {
+            fileContent += `${totalMats[mat]} ${mat}\n`;
+        });
+
+        // 3. Create Blob and Trigger Download
+        const blob = new Blob([fileContent], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        
+        // Cleanup
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // Clear all data from the store
+    async function clearDB() {
+        if(!db) await initDB();
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        tx.objectStore(STORE_NAME).clear();
+        return new Promise(resolve => tx.oncomplete = resolve);
+    }
+
+    /* =========================================
+       3. IMPORT / EXPORT LOGIC
+       ========================================= */
+    
+    // Export current queue to a CSV file
+    async function exportCSV() {
+        const items = await getAllItems();
+        if (items.length === 0) {
+            alert("Queue is empty. Nothing to export.");
+            return;
+        }
+
+        // CSV Header
+        let csvContent = "ID,Name,Quantity\n";
+        
+        items.forEach(item => {
+            // Simple CSV formatting (assuming no commas in names based on GAME_DATA)
+            csvContent += `${item.id},${item.name},${item.qty}\n`;
+        });
+
+        const blob = new Blob([csvContent], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "astroneer_queue.csv";
+        document.body.appendChild(a);
+        a.click();
+        
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // Import queue from a selected CSV file
+    async function importCSV(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        if(!await showModal("Confirm Import", "Importing will replace your current queue.\nContinue?", true)) {
+            input.value = ''; 
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const text = e.target.result;
+            const lines = text.split('\n');
+            
+            await clearDB();
+            let count = 0;
+            let skipped = 0;
+
+            // Skip header (i=1)
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+
+                const parts = line.split(',');
+                if (parts.length < 3) {
+                    skipped++;
+                    continue;
+                }
+
+                const id = parts[0].trim();
+                let qty = parseInt(parts[parts.length-1]);
+
+                if (!id || isNaN(qty)) {
+                    skipped++;
+                    continue;
+                }
+
+                if (qty < 1) qty = 1;
+
+                // Find item data to ensure validity and get materials
+                let itemData = null;
+                for (const list of Object.values(GAME_DATA)) {
+                    const found = list.find(it => it.id === id);
+                    if (found) { itemData = found; break; }
+                }
+
+                if (itemData) {
+                    await saveItem({
+                        id: itemData.id,
+                        name: itemData.name,
+                        mats: itemData.mats,
+                        qty: qty
+                    });
+                    count++;
+                } else {
+                    skipped++;
+                }
+            }
+            
+            render();
+            let msg = `Imported ${count} items successfully.`;
+            if (skipped > 0) {
+                msg += `\nSkipped ${skipped} invalid items (malformed or not found in database).`;
+            }
+            await showModal("Import Complete", msg);
+            input.value = ''; // Reset input so same file can be selected again if needed
+        };
+        reader.readAsText(file);
+    }
+
+    /* =========================================
+       4. APP STATE & LOGIC
+       ========================================= */
+    
+    // Populate select dropdowns, optionally filtering by name
+    function populateDropdowns(filter = "") {
+        const lowerFilter = filter.toLowerCase();
+
+        for (const [tier, items] of Object.entries(GAME_DATA)) {
+            const select = document.getElementById(`sel-${tier}`);
+            
+            // Reset options
+            select.innerHTML = '<option value="">Select Item...</option>';
+
+            // Sort alphabetically for easier finding
+            items.sort((a,b) => a.name.localeCompare(b.name));
+            
+            items.forEach(item => {
+                if (item.name.toLowerCase().includes(lowerFilter)) {
+                    const opt = document.createElement("option");
+                    opt.value = item.id;
+                    opt.textContent = item.name;
+                    select.appendChild(opt);
+                }
+            });
+        }
+    }
+
+    // Clear search input and reset dropdowns
+    function clearSearch() {
+        const input = document.getElementById('search-input');
+        input.value = '';
+        populateDropdowns('');
+    }
+
+    // Add the selected item from a specific dropdown to the queue
+    async function addItemFromSelect(selectId) {
+        const select = document.getElementById(selectId);
+        const itemId = select.value;
+        if (!itemId) return;
+
+        // Find item data
+        let itemData = null;
+        for (const list of Object.values(GAME_DATA)) {
+            const found = list.find(i => i.id === itemId);
+            if (found) { itemData = found; break; }
+        }
+
+        if (!itemData) return;
+
+        // Check if exists in DB
+        const currentItems = await getAllItems();
+        const existing = currentItems.find(i => i.id === itemId);
+
+        if (existing) {
+            existing.qty += 1;
+            await saveItem(existing);
+        } else {
+            await saveItem({
+                id: itemData.id,
+                name: itemData.name,
+                mats: itemData.mats,
+                qty: 1
+            });
+        }
+
+        render();
+    }
+
+    // Adjust the quantity of an item in the queue
+    async function changeQty(id, delta) {
+        const items = await getAllItems();
+        const item = items.find(i => i.id === id);
+        if (item) {
+            item.qty += delta;
+            if (item.qty < 1) item.qty = 1; // Min 1
+            await saveItem(item);
+            render();
+        }
+    }
+
+    // Remove an item from the queue
+    async function removeItem(id) {
+        await deleteItem(id);
+        render();
+    }
+
+    // Clear the entire queue with user confirmation
+    async function resetDB() {
+        if(await showModal("Clear Queue", "Are you sure you want to clear the entire list?", true)) {
+            await clearDB();
+            render();
+        }
+    }
+
+    // Render the queue list and calculated material totals to the UI
+    async function render() {
+        const items = await getAllItems();
+        const queueEl = document.getElementById('queue-container');
+        const matsEl = document.getElementById('materials-container');
+        
+        queueEl.innerHTML = '';
+        matsEl.innerHTML = '';
+
+        const totalMats = {};
+
+        if (items.length === 0) {
+            queueEl.innerHTML = '<li style="text-align:center; padding:20px; color:#666;">List is empty. Add items above.</li>';
+            matsEl.innerHTML = '<li style="padding:10px;">--</li>';
+            return;
+        }
+
+        // Render List
+        items.forEach(item => {
+            // Calculate mats for this row
+            let costStr = [];
+            for(const [m, q] of Object.entries(item.mats)) {
+                costStr.push(`${m}: ${q}`);
+                // Add to totals
+                if(!totalMats[m]) totalMats[m] = 0;
+                totalMats[m] += (q * item.qty);
+            }
+
+            const li = document.createElement('li');
+            li.className = 'queue-item';
+            li.innerHTML = `
+                <div class="item-name">${item.name}</div>
+                <div class="item-cost">${costStr.join(', ')} <br> <small>(per unit)</small></div>
+                <div class="qty-controls">
+                    <button class="qty-btn" onclick="changeQty('${item.id}', -1)">-</button>
+                    <div class="qty-display">${item.qty}</div>
+                    <button class="qty-btn" onclick="changeQty('${item.id}', 1)">+</button>
+                </div>
+                <button class="remove-btn" onclick="removeItem('${item.id}')" title="Remove">×</button>
+            `;
+            queueEl.appendChild(li);
+        });
+
+        // Render Totals
+        const sortedMats = Object.keys(totalMats).sort();
+        sortedMats.forEach(mat => {
+            const li = document.createElement('li');
+            li.className = 'mat-item';
+            li.innerHTML = `
+                <span class="mat-name">${mat}</span>
+                <span class="mat-val">${totalMats[mat]}</span>
+            `;
+            matsEl.appendChild(li);
+        });
+    }
+
+    /* =========================================
+       5. UI UTILITIES (Modal)
+       ========================================= */
+    // Display a custom modal for alerts or confirmations
+    function showModal(title, message, isConfirm = false) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('custom-modal');
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            document.getElementById('modal-input').style.display = 'none';
+            
+            const btnOk = document.getElementById('modal-ok');
+            const btnCancel = document.getElementById('modal-cancel');
+            
+            btnCancel.style.display = isConfirm ? 'block' : 'none';
+            
+            // Simple onclick assignment prevents listener stacking
+            btnOk.onclick = () => {
+                modal.style.display = 'none';
+                resolve(true);
+            };
+            
+            btnCancel.onclick = () => {
+                modal.style.display = 'none';
+                resolve(false);
+            };
+            
+            modal.style.display = 'flex';
+        });
+    }
+
+    // Display a custom modal with a text input field
+    function showInputModal(title, message, defaultValue = "") {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('custom-modal');
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            
+            const input = document.getElementById('modal-input');
+            input.style.display = 'block';
+            input.value = defaultValue;
+            input.focus();
+
+            const btnOk = document.getElementById('modal-ok');
+            const btnCancel = document.getElementById('modal-cancel');
+            
+            btnCancel.style.display = 'block';
+            
+            btnOk.onclick = () => {
+                modal.style.display = 'none';
+                input.style.display = 'none';
+                resolve(input.value);
+            };
+            
+            btnCancel.onclick = () => {
+                modal.style.display = 'none';
+                input.style.display = 'none';
+                resolve(null);
+            };
+
+            // Allow Enter key to submit
+            input.onkeydown = (e) => {
+                if(e.key === 'Enter') btnOk.click();
+                if(e.key === 'Escape') btnCancel.click();
+            };
+            
+            modal.style.display = 'flex';
+        });
+    }
+
+    /* =========================================
+       6. TOOLTIP LOGIC
+       ========================================= */
+    const tooltip = document.getElementById('tooltip-display');
+
+    // Calculate position and display the custom tooltip
+    function updateTooltip(target) {
+        if (!target) return;
+        
+        const text = target.getAttribute('data-tooltip');
+        if (!text) return;
+
+        tooltip.textContent = text;
+        tooltip.style.display = 'block';
+
+        const rect = target.getBoundingClientRect();
+        const tipRect = tooltip.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        // Default: Bottom Center
+        let top = rect.bottom + 8;
+        let left = rect.left + (rect.width / 2) - (tipRect.width / 2);
+
+        // Check Right Edge
+        if (left + tipRect.width > viewportWidth - 10) {
+            left = viewportWidth - tipRect.width - 10;
+        }
+        // Check Left Edge
+        if (left < 10) {
+            left = 10;
+        }
+
+        // Check Bottom Edge (Flip to top if needed)
+        if (top + tipRect.height > viewportHeight - 10) {
+            top = rect.top - tipRect.height - 8;
+        }
+
+        tooltip.style.top = `${top}px`;
+        tooltip.style.left = `${left}px`;
+    }
+
+    document.addEventListener('mouseover', (e) => {
+        const target = e.target.closest('[data-tooltip]');
+        if (target) updateTooltip(target);
+    });
+
+    document.addEventListener('mouseout', (e) => {
+        const target = e.target.closest('[data-tooltip]');
+        if (target) tooltip.style.display = 'none';
+    });
+
+    // Initialize
+    window.addEventListener('DOMContentLoaded', async () => {
+        await initDB();
+        populateDropdowns();
+        render();
+    });
+
+</script>
+</body>
+</html>

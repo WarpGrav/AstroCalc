@@ -22,11 +22,20 @@ WarpGrav: 1/27/2026
 - Added comments to JS functions.
 - Updated text for Download button and Materials header.
 -->
+<!--
+WarpGrav: 2/1/2026
+- Added FavIcon as (Base64).
+- Added Tier column to Production Queue.
+- Added Quantity Spinner for each printer tier column.
+- Altered teh style of the qty. spinner in the production queue
+- altered the column widths in the production queue to better fit the new columns/control css.
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="data:image/png;base64,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">
     <title>AstroCalc</title>
     <style>
         :root {
@@ -100,6 +109,29 @@ WarpGrav: 1/27/2026
         .input-row {
             display: flex;
             gap: 5px;
+        }
+        
+        .queue-item .qty-input,
+        .tier-group .input-row input[type="number"] {
+            width: 60px;
+            padding: 8px;
+            background: #1e1e20;
+            color: var(--accent-orange);
+            border: 1px solid var(--accent-blue);
+            border-radius: 4px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .queue-item .qty-input::-webkit-inner-spin-button,
+        .queue-item .qty-input::-webkit-outer-spin-button,
+        .tier-group .input-row input[type="number"]::-webkit-inner-spin-button,
+        .tier-group .input-row input[type="number"]::-webkit-outer-spin-button {
+            opacity: 1;
+            filter: invert(1);
+            cursor: pointer;
         }
 
         select {
@@ -195,7 +227,7 @@ WarpGrav: 1/27/2026
 
         .queue-item {
             display: grid;
-            grid-template-columns: 2fr 2fr 1.5fr 0.5fr;
+            grid-template-columns: 20px 2fr 2fr 68px 0.5fr;
             align-items: center;
             background: #363639;
             margin-bottom: 8px;
@@ -206,38 +238,25 @@ WarpGrav: 1/27/2026
 
         .item-name { font-weight: bold; }
         
+        .item-tier {
+            font-size: 0.75rem;
+            background: #222;
+            padding: 8px 2px;
+            border: 1px solid var(--accent-blue);
+            border-radius: 4px;
+            text-align: center;
+            color: var(--accent-blue);
+        }
+
+        .queue-item .qty-input {
+            justify-self: end;
+            width: 60px;
+        }
+        
         .item-cost { 
             font-size: 0.85rem; 
             color: var(--text-muted); 
             line-height: 1.4;
-        }
-
-        .qty-controls {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-            background: #222;
-            border-radius: 4px;
-            padding: 2px;
-        }
-
-        .qty-btn {
-            background: #444;
-            color: white;
-            border: none;
-            width: 24px;
-            height: 24px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .qty-btn:hover { background: #555; }
-
-        .qty-display {
-            width: 30px;
-            text-align: center;
-            font-weight: bold;
         }
 
         .remove-btn {
@@ -380,25 +399,37 @@ WarpGrav: 1/27/2026
         <div class="tier-group">
             <h3>Tier 1: Backpack</h3>
             <select id="sel-tier1"><option value="">Select Item...</option></select>
-            <button class="add-btn" onclick="addItemFromSelect('sel-tier1')">Add Small</button>
+            <div class="input-row">
+                <input type="number" id="qty-tier1" value="1" min="1">
+                <button class="add-btn" onclick="addItemFromSelect('sel-tier1', 'qty-tier1')">Add Small</button>
+            </div>
         </div>
 
         <div class="tier-group">
             <h3>Tier 2: Small Printer</h3>
             <select id="sel-tier2"><option value="">Select Item...</option></select>
-            <button class="add-btn" onclick="addItemFromSelect('sel-tier2')">Add Medium</button>
+            <div class="input-row">
+                <input type="number" id="qty-tier2" value="1" min="1">
+                <button class="add-btn" onclick="addItemFromSelect('sel-tier2', 'qty-tier2')">Add Medium</button>
+            </div>
         </div>
 
         <div class="tier-group">
             <h3>Tier 3: Med Printer</h3>
             <select id="sel-tier3"><option value="">Select Item...</option></select>
-            <button class="add-btn" onclick="addItemFromSelect('sel-tier3')">Add Large</button>
+            <div class="input-row">
+                <input type="number" id="qty-tier3" value="1" min="1">
+                <button class="add-btn" onclick="addItemFromSelect('sel-tier3', 'qty-tier3')">Add Large</button>
+            </div>
         </div>
 
         <div class="tier-group">
             <h3>Tier 4: Large Printer</h3>
             <select id="sel-tier4"><option value="">Select Item...</option></select>
-            <button class="add-btn" onclick="addItemFromSelect('sel-tier4')">Add XL</button>
+            <div class="input-row">
+                <input type="number" id="qty-tier4" value="1" min="1">
+                <button class="add-btn" onclick="addItemFromSelect('sel-tier4', 'qty-tier4')">Add XL</button>
+            </div>
         </div>
 
     </div>
@@ -874,9 +905,12 @@ WarpGrav: 1/27/2026
     }
 
     // Add the selected item from a specific dropdown to the queue
-    async function addItemFromSelect(selectId) {
+    async function addItemFromSelect(selectId, qtyId) {
         const select = document.getElementById(selectId);
+        const qtyInput = document.getElementById(qtyId);
         const itemId = select.value;
+        const addQty = parseInt(qtyInput.value) || 1;
+
         if (!itemId) return;
 
         // Find item data
@@ -893,17 +927,18 @@ WarpGrav: 1/27/2026
         const existing = currentItems.find(i => i.id === itemId);
 
         if (existing) {
-            existing.qty += 1;
+            existing.qty += addQty;
             await saveItem(existing);
         } else {
             await saveItem({
                 id: itemData.id,
                 name: itemData.name,
                 mats: itemData.mats,
-                qty: 1
+                qty: addQty
             });
         }
 
+        qtyInput.value = 1; // Reset spinner
         render();
     }
 
@@ -964,13 +999,10 @@ WarpGrav: 1/27/2026
             const li = document.createElement('li');
             li.className = 'queue-item';
             li.innerHTML = `
+                <div class="item-tier">T${item.id.substring(1,2)}</div>
                 <div class="item-name">${item.name}</div>
                 <div class="item-cost">${costStr.join(', ')} <br> <small>(per unit)</small></div>
-                <div class="qty-controls">
-                    <button class="qty-btn" onclick="changeQty('${item.id}', -1)">-</button>
-                    <div class="qty-display">${item.qty}</div>
-                    <button class="qty-btn" onclick="changeQty('${item.id}', 1)">+</button>
-                </div>
+                <input type="number" class="qty-input" value="${item.qty}" min="1" onchange="updateItemQty('${item.id}', this.value)">
                 <button class="remove-btn" onclick="removeItem('${item.id}')" title="Remove">×</button>
             `;
             queueEl.appendChild(li);
@@ -987,6 +1019,19 @@ WarpGrav: 1/27/2026
             `;
             matsEl.appendChild(li);
         });
+    }
+
+    // Update quantity directly from the spinner input
+    async function updateItemQty(id, value) {
+        let qty = parseInt(value);
+        if (isNaN(qty) || qty < 1) qty = 1;
+        const items = await getAllItems();
+        const item = items.find(i => i.id === id);
+        if (item) {
+            item.qty = qty;
+            await saveItem(item);
+            render();
+        }
     }
 
     /* =========================================

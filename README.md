@@ -20,3 +20,9 @@ WarpGrav: 1/27/2026
 - Added comments to JS functions.
 - Updated text for Download button and Materials header.
 
+WarpGrav: 2/1/2026
+- Added FavIcon as (Base64).
+- Added Tier column to Production Queue.
+- Added Quantity Spinner for each printer tier column.
+- Altered teh style of the qty. spinner in the production queue
+- altered the column widths in the production queue to better fit the new columns/control css.
